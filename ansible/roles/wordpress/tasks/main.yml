@@ -1,0 +1,100 @@
+#https://www.digitalocean.com/community/tutorials/how-to-use-ansible-to-install-and-set-up-wordpress-with-lamp-on-ubuntu-18-04-ru
+---
+- name: Install Nginx
+  apt:
+    name=nginx
+    state=latest
+
+- name: Install Nginx config for site
+  template:
+    src=templates/nginx.conf
+    dest=/etc/nginx/sites-enabled/default
+
+- name: Install PHP Extensions
+  apt: name={{ item }} update_cache=yes state=latest
+  loop: "{{ php_modules }}"
+
+
+- name: Create document root
+  file:
+    path: "/var/www/smartnethome.site"
+    state: directory
+    owner: "www-data"
+    group: "www-data"
+    mode: '0755'
+
+- name: Download and unpack latest WordPress
+  unarchive:
+    src: https://wordpress.org/latest.tar.gz
+    dest: "/var/www/smartnethome.site"
+    remote_src: yes
+    extra_opts: [--strip-components=1]
+    creates: "/var/www/smartnethome.site/wp-admin"
+
+- name: Set ownership
+  file:
+    path: "/var/www/smartnethome.site"
+    state: directory
+    recurse: yes
+    owner: www-data
+    group: www-data
+
+- name: Set permissions for directories
+  shell: "/usr/bin/find /var/www/smartnethome.site/ -type d -exec chmod 755 {} \\;"
+
+- name: Set permissions for files
+  shell: "/usr/bin/find /var/www/smartnethome.site/ -type f -exec chmod 644 {} \\;"
+
+- name: Set up wp-config
+  template:
+    src: "templates/wp-config.php.j2"
+    dest: "/var/www/smartnethome.site/wp-config.php"
+
+- name: Restart Nginx
+  service:
+    name: nginx
+    state: restarted
+
+- name: Install git
+  action: apt pkg=git state=present update_cache=true
+
+
+#tasks for gitlab-runner
+- name: Add the user for gitlab runner
+  become: true
+  ansible.builtin.user:
+    name: runner
+
+- name: Add runner user to sudoers
+  become: true
+  user:
+    name=runner
+    groups=sudo
+    append=yes
+    state=present
+
+- name: Allow gitlab_runner user to have passwordless sudo
+  become: true
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^runner'
+    line: 'runner ALL=(ALL) NOPASSWD: ALL'
+
+- name: Create directory for runner authorized_keys
+  become: true
+  file:
+    name: /home/runner/.ssh/
+    state: directory
+
+- name: Copy authorized_keys file
+  become: true
+  template:
+    src: templates/authorized_keys
+    dest: /home/runner/.ssh/
+
+# - name: set permission wordpress folder for runner user
+#   become: true
+#   shell: "chown -R runner /var/www/smartnethome.site/wordpress/"
+
+

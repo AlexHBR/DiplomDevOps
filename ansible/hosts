@@ -1,0 +1,46 @@
+[front]
+smartnethome.site  letsencrypt_email=ubuntu@yandex.ru domain_name=smartnethome.site
+
+[MySQL]
+db01.smartnethome.site mysql_server_id=1 mysql_replication_role=master
+db02.smartnethome.site mysql_server_id=2 mysql_replication_role=slave
+
+[app]
+app.smartnethome.site
+
+[gitlab]
+gitlab.smartnethome.site
+
+[runner]
+runner.smartnethome.site
+
+[monitoring]
+monitoring.smartnethome.site
+
+[proxy]
+smartnethome.site
+
+[front:vars]
+ansible_ssh_common_args= '-o "StrictHostKeyChecking no"'
+
+
+[MySQL:vars]
+ansible_ssh_common_args=' -o "StrictHostKeyChecking no" -o ProxyCommand="ssh  -W %h:%p -q ubuntu@smartnethome.site"'
+
+
+[app:vars]
+ansible_ssh_common_args='-o "StrictHostKeyChecking no" -o ProxyCommand="ssh -W %h:%p -q ubuntu@smartnethome.site"'
+db_user=wordpress
+db_pass=wordpress
+db_name=wordpress
+php_modules=[ 'php7.4', 'php7.4-fpm', 'php7.4-mysql', 'php-common', 'php7.4-cli', 'php7.4-common', 'php7.4-json', 'php7.4-opcache', 'php7.4-readline', 'php7.4-mbstring', 'php7.4-xml', 'php7.4-gd', 'php7.4-curl', 'php7.4-zip' ]
+
+
+[monitoring:vars]
+ansible_ssh_common_args='-o "StrictHostKeyChecking no" -o ProxyCommand="ssh -W %h:%p -q ubuntu@smartnethome.site"'
+
+[gitlab:vars]
+ansible_ssh_common_args='-o "StrictHostKeyChecking no" -o ProxyCommand="ssh -W %h:%p -q ubuntu@smartnethome.site"'
+
+[runner:vars]
+ansible_ssh_common_args='-o "StrictHostKeyChecking no" -o ProxyCommand="ssh -W %h:%p -q ubuntu@smartnethome.site"'

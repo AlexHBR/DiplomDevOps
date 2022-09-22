@@ -1,0 +1,8 @@
+---
+- name: restart mysql
+  service: "name={{ mysql_daemon }} state=restarted"
+  register: mysql_service
+
+- name: pause after mysql restart
+  pause: "seconds=5"
+  when: mysql_service.changed
